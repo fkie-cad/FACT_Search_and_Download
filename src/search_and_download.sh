@@ -1,5 +1,7 @@
 #!/bin/bash
 
+FACT_URL=https://faf.caad.fkie.fraunhofer.de
+
 TMPQUERY=search_query.json
 TMPSEARCH=search.txt
 TMPBIN=tmp_binary.txt
@@ -24,7 +26,7 @@ done
 echo "$USRNAME downloading all data for search query $QUERY"
 echo $QUERY | python -m json.tool > "$TMPQUERY"
 
-SEARCH=$(curl  https://faf.caad.fkie.fraunhofer.de/rest/search -u "$USRNAME:$PASS" -X GET --data-urlencode data@"$TMPQUERY")
+SEARCH=$(curl  $FACT_URL/rest/search -u "$USRNAME:$PASS" -X GET --data-urlencode data@"$TMPQUERY")
 
 echo "$SEARCH" > "$TMPSEARCH"
 
@@ -48,7 +50,7 @@ while read -r line; do
 
     echo $DATA | python -m json.tool > "$TMPUID"
 
-    DWNLOAD=$(curl https://faf.caad.fkie.fraunhofer.de/rest/download -u "$USRNAME:$PASS" -X GET --data-urlencode data@"$TMPUID")
+    DWNLOAD=$(curl $FACT_URL/rest/download -u "$USRNAME:$PASS" -X GET --data-urlencode data@"$TMPUID")
 
     echo "$DWNLOAD" > "$TMPDWNLOAD"
 
