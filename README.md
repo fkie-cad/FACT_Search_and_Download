@@ -10,6 +10,5 @@ Example:
 $ ./search_and_download.sh
 Please enter your username XXX
 Please enter your password XXX
-Please enter your search query {"search_query": "{\"device_class\": \"Printer\"}", "firmware_flag": true}
+Please enter your search query {"processed_analysis.cpu_architecture.summary": {"$options": "si", "$regex": "arm"}}
 ```
-If you want to download all firmwares including a file matching your search, set "firmware_flag" to *true*.
