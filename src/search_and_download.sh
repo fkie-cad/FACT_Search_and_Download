@@ -50,9 +50,16 @@ while read -r line; do
     #Extract the part of the returned json that contains the binary and the part that contains the name
     BIN=$(cat "$TMPDWNLOAD" | grep -Eio '("binary": .*")' | cut -f2 -d: | cut -f2 -d\" )
 
-    NAME=$(cat "$TMPDWNLOAD" | grep -Eio '("file_name": .*")' | cut -f2 -d: | cut -f2 -d\" )
+    FILENAME=$(cat "$TMPDWNLOAD" | grep -Eio '("file_name": .*")' | cut -f2 -d: | cut -f2 -d\" )
 
     echo "$BIN" > "$TMPBIN"
+
+    NAMEIND=0
+    NAME="$FILENAME"
+    while [[ -f "$NAME" ]]; do
+        NAMEIND=$((NAMEIND+1))
+        NAME="$FILENAME($NAMEIND)"
+    done
 
     python -m base64 -d "$TMPBIN" > "$NAME"
 
