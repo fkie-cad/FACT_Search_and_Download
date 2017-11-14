@@ -16,7 +16,7 @@ echo $QUERY
 echo $QUERY | python -m json.tool
 
 while [[ $? != 0 ]]; do
-    read -p "Please enter your search query. Example: {\"search_query\": \"{\\\"device_class\\\": \\\"Printer\\\"}\"} " -r QUERY
+    read -p "Please enter your search query. Example: {\"device_class\": \"Printer\"} " -r QUERY
     echo $QUERY
     echo $QUERY | python -m json.tool
 done
