@@ -72,39 +72,38 @@ def get_parent_uids_from_file_object(file_object_uid, username, password):
     test = requests.get(url, auth=(username, password))
     file_object = test.json()['file_object']
     firmwares_including_this_file = []
-    virtual_file_path = []
     for key, value in file_object.items():
-        # print (key)
         nested = file_object[key]
         for key2, value2 in nested.items():
-            # print ('    ', key2)
-            if key2 == 'virtual_file_path':
-                virtual_file_path=value2
-                print('    ', virtual_file_path)
             if key2 == 'firmwares_including_this_file':
-                firmwares_including_this_file=value2
-                print('There are {} uids'.format(len(firmwares_including_this_file)), '\n', firmwares_including_this_file)
+                firmwares_including_this_file = value2
+    return firmwares_including_this_file
 
 
-def compare_with_file_object(firmware_uids, data, username, password):
+def compare_with_file_objects(firmware_uids, data, username, password):
     search_file_object_result = make_search_request_file_object(data, username, password)
-    test_uid=search_file_object_result.json()['uids'][0]
-    get_parent_uids_from_file_object(test_uid, username, password)
-    #for uid in search_file_object_result['uids']:
-    #    get_parent_uids_from_file_object(uid, username, password)
+    all_unique_uids = []
+    for uid in search_file_object_result.json()['uids']:
+        parent_uids = get_parent_uids_from_file_object(uid, username, password)
+        for parent_uid in parent_uids:
+            if parent_uid not in all_unique_uids:
+                all_unique_uids.append(parent_uid)
+    for firmware_uid in firmware_uids:
+        if firmware_uid not in all_unique_uids:
+            all_unique_uids.append(firmware_uid)
+    return all_unique_uids
 
 
 def main():
     username = get_user()
-    # print ("2: ", username)
     password = getpass.getpass()
     data = get_search_query()
     search_result_json = make_search_request_firmware(data, username, password)
-    firmware_uids_complete = compare_with_file_object(search_result_json.json()['uids'], data, username, password)
+    firmware_uids_complete = compare_with_file_objects(search_result_json.json()['uids'], data, username, password)
 
     count_firmware_images = 0
-    for firmware_uid in search_result_json.json()['uids']:
-        # download_found_image(firmware_uid, username, password)
+    for firmware_uid in firmware_uids_complete:
+        download_found_image(firmware_uid, username, password)
         count_firmware_images = count_firmware_images + 1
     print("Downloaded {} image(s)".format(count_firmware_images))
 
