@@ -20,8 +20,8 @@ def check_arguments():
     for arg in sys.argv:
         arg_index += 1
         if arg == '-h' or arg == '--help':
-            print("This program is used for... \n"
-                  "Use these argument to ...\n"
+            print("This program is used to search for images in the FACT database, and download all images matching the search query.\n"
+                  "Use these arguments to modify your search:\n"
                   "-h or --help: display this help\n"
                   "-H [Host] or --host [Host]: change the host. Default: https://faf.caad.fkie.fraunhofer.de\n"
                   "-u [Username] or --user [Username]\n"
