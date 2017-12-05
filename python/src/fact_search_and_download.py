@@ -6,43 +6,33 @@ import requests
 import getpass
 import sys
 from urllib.parse import quote_plus
-
-host = 'https://faf.caad.fkie.fraunhofer.de'
-username = ''
-search_query = ''
+import argparse
 
 
 def check_arguments():
-    arg_index = 0
-    global host
-    global username
-    global search_query
-    for arg in sys.argv:
-        arg_index += 1
-        if arg == '-h' or arg == '--help':
-            print("This program is used to search for images in the FACT database, and download all images matching the search query.\n"
-                  "Use these arguments to modify your search:\n"
-                  "-h or --help: display this help\n"
-                  "-H [Host] or --host [Host]: change the host. Default: https://faf.caad.fkie.fraunhofer.de\n"
-                  "-u [Username] or --user [Username]\n"
-                  "-q [json-string] or --query [json-string]: a search query as a string\n"
-                  "-Q [json-file] or --queryfile [json-file]: a search query in a .json file")
-            raise SystemExit
-        elif arg == '-H' or arg == '--host':
-            host = sys.argv[arg_index]
-        elif arg == '-u' or arg == '--user':
-            username = sys.argv[arg_index]
-            print("Username: ", username)
-        elif arg == '-q' or arg == '--query':
-            search_query = sys.argv[arg_index]
-        elif arg == '-Q' or arg == '--queryfile':
-            with open(sys.argv[arg_index]) as query_file:
-                search_query = query_file.read()
+    parser = argparse.ArgumentParser(description='This program is used to search for images in the FACT database, '
+                                                 'and download all images matching the search query.')
+    parser.add_argument('-H', '--host', help='Change the host',
+                        default='https://faf.caad.fkie.fraunhofer.de')
+    parser.add_argument('-u', '--user', help='State your username', default=None)
+    parser.add_argument('-q', '--query', help='A search query as a string', default=None)
+    parser.add_argument('-Q', '--queryfile', help='A search query in a .json file', default=None)
+    arguments = parser.parse_args()
+    return arguments
 
 
-def get_search_query():
-    global search_query
-    if not search_query:
+def get_user(username):
+    if not username:
+        username = input("Enter your username: ")
+    return username
+
+
+def get_search_query(arguments):
+    search_query = arguments.query
+    if not search_query and arguments.queryfile is not None:
+        with open(arguments.queryfile) as query_file:
+            search_query = query_file.read()
+    elif not search_query:
         search_query = input("Please enter your search query: ")
     try:
         json.loads(search_query)
@@ -53,36 +43,23 @@ def get_search_query():
     return search_query
 
 
-def get_user():
-    global username
-    if not username:
-        username = input("Enter your username: ")
-
-
-def make_search_request_firmware(password):
-    url = '{}{}{}'.format(host, '/rest/firmware?query=', quote_plus(search_query))
+def make_search_request_firmware(username, password, host, search_query):
+    url = '{}{}{}'.format(host, '/rest/firmware?recursive=true&query=', quote_plus(search_query))
     search_result_json = requests.get(url, auth=(username, password))
     print("Search for firmware returned status-code ", search_result_json.status_code)
     return search_result_json
 
 
-def make_search_request_file_object(password):
-    url = '{}{}{}'.format(host, '/rest/file_object?query=', quote_plus(search_query))
-    search_result_json = requests.get(url, auth=(username, password))
-    print("Search for file returned status-code ", search_result_json.status_code)
-    return search_result_json
-
-
-def make_download_request(firmware_uid, password):
+def make_download_request(username, password, host, firmware_uid):
     url = '{}{}{}'.format(host, '/rest/binary/', str(firmware_uid))
     download_json = requests.get(url, auth=(username, password))
     print("Download returned status-code ", download_json.status_code)
     return download_json
 
 
-def download_found_image(firmware_uid, password):
+def download_found_image(username, password, host, firmware_uid):
     print("Downloading image with id ", firmware_uid)
-    download_json = make_download_request(firmware_uid, password)
+    download_json = make_download_request(username, password, host, firmware_uid)
     firmware_file_name = download_json.json()['file_name']
     print("File name: ", firmware_file_name)
     binary_base64 = download_json.json()['binary']
@@ -91,47 +68,20 @@ def download_found_image(firmware_uid, password):
         downloaded_file.write(binary)
 
 
-def get_parent_uids_from_file_object(file_object_uid, password):
-    url = '{}{}{}'.format(host, '/rest/file_object/', quote_plus(file_object_uid))
-    test = requests.get(url, auth=(username, password))
-    file_object = test.json()['file_object']
-    firmwares_including_this_file = []
-    for key, value in file_object.items():
-        nested = file_object[key]
-        for key2, value2 in nested.items():
-            if key2 == 'firmwares_including_this_file':
-                firmwares_including_this_file = value2
-    return firmwares_including_this_file
-
-
-def compare_with_file_objects(firmware_uids, password):
-    search_file_object_result = make_search_request_file_object(password)
-    all_unique_uids = []
-    for uid in search_file_object_result.json()['uids']:
-        parent_uids = get_parent_uids_from_file_object(uid, password)
-        for parent_uid in parent_uids:
-            if parent_uid not in all_unique_uids:
-                all_unique_uids.append(parent_uid)
-    for firmware_uid in firmware_uids:
-        if firmware_uid not in all_unique_uids:
-            all_unique_uids.append(firmware_uid)
-    return all_unique_uids
-
-
 def main():
-    check_arguments()
-    get_user()
+    arguments = check_arguments()
+    username = get_user(arguments.user)
     password = getpass.getpass()
-    get_search_query()
-    search_result_json = make_search_request_firmware(password)
-    firmware_uids_complete = compare_with_file_objects(search_result_json.json()['uids'], password)
-
+    search_query = get_search_query(arguments)
+    host = arguments.host
+    search_result_json = make_search_request_firmware(username, password, host, search_query)
     downloaded_images = 0
-    for firmware_uid in firmware_uids_complete:
-        download_found_image(firmware_uid, username, password)
+    for firmware_uid in search_result_json.json()['uids']:
+        download_found_image(username, password, host, firmware_uid)
         downloaded_images = downloaded_images + 1
-    print("Found {} image(s), downloaded {} image(s)".format(len(firmware_uids_complete), downloaded_images))
+    print("Found {} image(s), downloaded {} image(s)".format(len(search_result_json.json()['uids']), downloaded_images))
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    exit(main())
