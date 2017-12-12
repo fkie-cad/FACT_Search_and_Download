@@ -7,6 +7,7 @@ import getpass
 import sys
 from urllib.parse import quote_plus
 import argparse
+import os
 
 
 def check_arguments():
@@ -47,6 +48,7 @@ def make_search_request_firmware(username, password, host, search_query):
     url = '{}{}{}'.format(host, '/rest/firmware?recursive=true&query=', quote_plus(search_query))
     search_result_json = requests.get(url, auth=(username, password))
     print("Search for firmware returned status-code ", search_result_json.status_code)
+    search_result_json.raise_for_status()
     return search_result_json
 
 
@@ -54,18 +56,28 @@ def make_download_request(username, password, host, firmware_uid):
     url = '{}{}{}'.format(host, '/rest/binary/', str(firmware_uid))
     download_json = requests.get(url, auth=(username, password))
     print("Download returned status-code ", download_json.status_code)
+    download_json.raise_for_status()
     return download_json
 
 
 def download_found_image(username, password, host, firmware_uid):
     print("Downloading image with id ", firmware_uid)
     download_json = make_download_request(username, password, host, firmware_uid)
-    firmware_file_name = download_json.json()['file_name']
+    firmware_file_name = append_number_if_duplicate(download_json.json()['file_name'])
     print("File name: ", firmware_file_name)
     binary_base64 = download_json.json()['binary']
     binary = base64.b64decode(binary_base64)
     with open(firmware_file_name, 'wb') as downloaded_file:
         downloaded_file.write(binary)
+
+
+def append_number_if_duplicate(firmware_file_name):
+    index = 0
+    new_firmware_file_name = firmware_file_name
+    while os.path.isfile(new_firmware_file_name):
+        index = index + 1
+        new_firmware_file_name = "{}({})".format(firmware_file_name, index)
+    return new_firmware_file_name
 
 
 def main():
