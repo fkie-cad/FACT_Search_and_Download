@@ -38,37 +38,50 @@ def get_search_query(arguments):
     try:
         json.loads(search_query)
     except ValueError as e:
-        print('invalid json: %s' % e)
-        return None
+        print('Invalid json: %s' % e)
+        exit(1)
     print("Search query is: ", search_query)
     return search_query
 
 
 def make_search_request_firmware(username, password, host, search_query):
     url = '{}{}{}'.format(host, '/rest/firmware?recursive=true&query=', quote_plus(search_query))
-    search_result_json = requests.get(url, auth=(username, password))
-    print("Search for firmware returned status-code ", search_result_json.status_code)
-    search_result_json.raise_for_status()
+    try:
+        search_result_json = requests.get(url, auth=(username, password))
+    except (requests.RequestException, requests.HTTPError, requests.ConnectionError) as e:
+        print('Error: %s' % e)
+        exit(1)
     return search_result_json
 
 
 def make_download_request(username, password, host, firmware_uid):
     url = '{}{}{}'.format(host, '/rest/binary/', str(firmware_uid))
-    download_json = requests.get(url, auth=(username, password))
-    print("Download returned status-code ", download_json.status_code)
-    download_json.raise_for_status()
+    try:
+        download_json = requests.get(url, auth=(username, password))
+    except (requests.RequestException, requests.HTTPError, requests.ConnectionError) as e:
+        print('Error: %s' % e)
+        return None
     return download_json
 
 
 def download_found_image(username, password, host, firmware_uid):
     print("Downloading image with id ", firmware_uid)
     download_json = make_download_request(username, password, host, firmware_uid)
-    firmware_file_name = append_number_if_duplicate(download_json.json()['file_name'])
+    try:
+        firmware_file_name = append_number_if_duplicate(download_json.json()['file_name'])
+    except KeyError:
+        print('Error: No download possible. No file found with this id.')
+        return None
     print("File name: ", firmware_file_name)
     binary_base64 = download_json.json()['binary']
-    binary = base64.b64decode(binary_base64)
+    try:
+        binary = base64.b64decode(binary_base64)
+    except (TypeError, SyntaxError) as e:
+        print('Error: %s' % e)
+        return None
     with open(firmware_file_name, 'wb') as downloaded_file:
         downloaded_file.write(binary)
+    return 0
 
 
 def append_number_if_duplicate(firmware_file_name):
@@ -89,8 +102,8 @@ def main():
     search_result_json = make_search_request_firmware(username, password, host, search_query)
     downloaded_images = 0
     for firmware_uid in search_result_json.json()['uids']:
-        download_found_image(username, password, host, firmware_uid)
-        downloaded_images = downloaded_images + 1
+        if download_found_image(username, password, host, firmware_uid) is not None:
+            downloaded_images = downloaded_images + 1
     print("Found {} image(s), downloaded {} image(s)".format(len(search_result_json.json()['uids']), downloaded_images))
     return 0
 
