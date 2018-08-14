@@ -3,7 +3,6 @@
 import base64
 import json
 import requests
-import getpass
 import sys
 from urllib.parse import quote_plus
 import argparse
@@ -15,17 +14,10 @@ def check_arguments():
                                                  'and download all images matching the search query.')
     parser.add_argument('-H', '--host', help='Change the host',
                         default='https://faf.caad.fkie.fraunhofer.de')
-    parser.add_argument('-u', '--user', help='State your username', default=None)
     parser.add_argument('-q', '--query', help='A search query as a string', default=None)
     parser.add_argument('-Q', '--queryfile', help='A search query in a .json file', default=None)
     arguments = parser.parse_args()
     return arguments
-
-
-def get_user(username):
-    if not username:
-        username = input("Enter your username: ")
-    return username
 
 
 def get_search_query(arguments):
@@ -44,36 +36,39 @@ def get_search_query(arguments):
     return search_query
 
 
-def make_search_request_firmware(username, password, host, search_query):
+def make_search_request_firmware(host, search_query):
     url = '{}{}{}'.format(host, '/rest/firmware?recursive=true&query=', quote_plus(search_query))
     try:
-        search_result_json = requests.get(url, auth=(username, password))
-    except (requests.RequestException, requests.HTTPError, requests.ConnectionError) as e:
+        search_result_json = requests.get(url).json()
+    except (requests.RequestException, requests.HTTPError, requests.ConnectionError, json.JSONDecodeError) as e:
         print('Error: %s' % e)
+        exit(1)
+    if 'error_message' in search_result_json:
+        print('[ERROR] {}'.format(search_result_json['error_message']))
         exit(1)
     return search_result_json
 
 
-def make_download_request(username, password, host, firmware_uid):
+def make_download_request(host, firmware_uid):
     url = '{}{}{}'.format(host, '/rest/binary/', str(firmware_uid))
     try:
-        download_json = requests.get(url, auth=(username, password))
-    except (requests.RequestException, requests.HTTPError, requests.ConnectionError) as e:
+        download_json = requests.get(url).json()
+    except (requests.RequestException, requests.HTTPError, requests.ConnectionError, json.JSONDecodeError) as e:
         print('Error: %s' % e)
         return None
     return download_json
 
 
-def download_found_image(username, password, host, firmware_uid):
+def download_found_image(host, firmware_uid):
     print("Downloading image with id ", firmware_uid)
-    download_json = make_download_request(username, password, host, firmware_uid)
+    download_json = make_download_request(host, firmware_uid)
     try:
-        firmware_file_name = append_number_if_duplicate(download_json.json()['file_name'])
+        firmware_file_name = append_number_if_duplicate(download_json['file_name'])
     except KeyError:
         print('Error: No download possible. No file found with this id.')
         return None
     print("File name: ", firmware_file_name)
-    binary_base64 = download_json.json()['binary']
+    binary_base64 = download_json['binary']
     try:
         binary = base64.b64decode(binary_base64)
     except (TypeError, SyntaxError) as e:
@@ -95,14 +90,12 @@ def append_number_if_duplicate(firmware_file_name):
 
 def main():
     arguments = check_arguments()
-    username = get_user(arguments.user)
-    password = getpass.getpass()
     search_query = get_search_query(arguments)
     host = arguments.host
-    search_result_json = make_search_request_firmware(username, password, host, search_query)
+    search_result_json = make_search_request_firmware(host, search_query)
     downloaded_images = 0
-    for firmware_uid in search_result_json.json()['uids']:
-        if download_found_image(username, password, host, firmware_uid) is not None:
+    for firmware_uid in search_result_json['uids']:
+        if download_found_image(host, firmware_uid) is not None:
             downloaded_images = downloaded_images + 1
     print("Found {} image(s), downloaded {} image(s)".format(len(search_result_json.json()['uids']), downloaded_images))
     return 0
