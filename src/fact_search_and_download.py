@@ -20,7 +20,6 @@
 import base64
 import json
 import requests
-import sys
 from urllib.parse import quote_plus
 import argparse
 import os

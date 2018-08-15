@@ -11,7 +11,7 @@ STORAGE_DIR = Path(Path(__file__).parent.parent.parent, 'data')
     ('existing', 'existing-0'),
     ('existing-twice', 'existing-twice-1')
 ])
-def test_help(file_name, expected_output):
+def test_get_storage_path(file_name, expected_output):
     print(STORAGE_DIR)
     designated_path = Path(STORAGE_DIR, file_name)
     expected_resulting_path = Path(STORAGE_DIR, expected_output)
