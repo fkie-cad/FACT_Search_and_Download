@@ -14,7 +14,7 @@ This tool is intended to create a ground truth matching specific parameters for 
 Write a mongodb query into a json file and execute the following command
 
 ```sh
-src/fact_search_and_download.py -H http://YOUR_FACT_INSTALLATION -Q PATH_TO_JSON_FILE_WITH_MONGO_QUERY -d STORE_FILES_TO_THIS_DIR
+src/fact_search_and_download.py -H http://YOUR_FACT_INSTALLATION -Q PATH_TO_JSON_FILE_WITH_MONGO_QUERY -D STORE_FILES_TO_THIS_DIR
 ```
 
 Alternatively you can write the query right to the command line if you use '*-q*' instead of '*-Q*'.  
