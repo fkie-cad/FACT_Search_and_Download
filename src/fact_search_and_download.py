@@ -60,6 +60,7 @@ def main():
     else:
         search_result_json = make_search_request_file(host, search_query)
     downloaded_files = 0
+    logging.info('start download of {} files'.format(len(search_result_json['uids'])))
     for firmware_uid in search_result_json['uids']:
         if download_file(host, firmware_uid, storage_directory) is not None:
             downloaded_files = downloaded_files + 1
