@@ -1,4 +1,21 @@
 #!/usr/bin/env python3
+'''
+    FACT Search and Download
+    Copyright (C) 2017-2018  Fraunhofer FKIE
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+'''
 
 import base64
 import json
@@ -111,7 +128,7 @@ def main():
     search_query = get_search_query(arguments)
     host = arguments.host
     storage_directory = Path(arguments.destination)
-    storage_directory.makedir(parents=True, exist_ok=True)
+    storage_directory.mkdir(parents=True, exist_ok=True)
     if arguments.firmware:
         search_result_json = make_search_request_firmware(host, search_query)
     else:
