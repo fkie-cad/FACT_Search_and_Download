@@ -1,5 +1,8 @@
 # FACT Search and Download
 
+[![Build Status](https://travis-ci.org/fkie-cad/FACT_Search_and_Download.svg?branch=master)](https://travis-ci.org/fkie-cad/FACT_Search_and_Download)
+[![codecov](https://codecov.io/gh/fkie-cad/FACT_Search_and_Download/branch/master/graph/badge.svg)](https://codecov.io/gh/fkie-cad/FACT_Search_and_Download)
+
 This program utilizes the [FACT](https://fkie-cad.github.io/FACT_core/) REST API to find and download all files matching a specific query.
 If used with '*-F*' parameter it downloads all firmware image that include files matching the query.
 
