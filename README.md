@@ -25,8 +25,12 @@ This line downloads all ELF executables that are larger than 4kb from a local FA
 ```sh
 src/fact_search_and_download.py -q {"$and": [{"processed_analysis.file_type.mime": "application/x-executable"}, {"size": {"$gte" : 4096}}]}
 ```
+## Requirements
 
-## Install Requrirements
+* Python3 >= 3.5
+* FACT_core >= 2.5 (with authentication disabled)
+
+### Install required Python libraries
 ```sh
 sudo -EH pip3 install -r requirements.txt
 ```
