@@ -1,0 +1,12 @@
+.cache/
+.idea/
+__pycache__
+*.pyc
+.settings
+.project
+.pydevproject
+build/
+dist/
+*.egg-info/*
+.pytest_cache
+.coverage
