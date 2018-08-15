@@ -17,7 +17,7 @@ def _make_download_request(host, firmware_uid):
 
 
 def download_file(host, file_uid, storage_directory):
-    logging.debug('Downloading file with uid ', file_uid)
+    logging.debug('Downloading file with uid {}'.format(file_uid))
     download_json = _make_download_request(host, file_uid)
     if download_json is None:
         return None

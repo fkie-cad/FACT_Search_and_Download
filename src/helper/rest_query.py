@@ -33,6 +33,6 @@ def get_and_validate_query(query, query_file):
         search_query = get_binary_from_file(query_file).decode('utf-8', 'ignore')
     else:
         raise RuntimeError('No query given. Please specify a query with -q or -Q option')
-    logging.debug('Search query is: ', search_query)
+    logging.debug('Search query is: {}'.format(search_query))
     json.loads(search_query)
     return search_query
