@@ -18,13 +18,16 @@
 '''
 
 import argparse
+import json
 import logging
+import requests
 import sys
 
-from helper.rest_query import make_search_request_file, make_search_request_firmware, get_and_validate_query
-from helper.rest_download import download_file
 from helper.logging import setup_logging
+from helper.rest_download import download_file
+from helper.rest_query import make_search_request_file, make_search_request_firmware, get_and_validate_query
 from helper.storage import prepare_storage_dir
+
 
 PROGRAM_NAME = 'FACT Search and Download'
 PROGRAM_VERSION = '0.3'
@@ -49,16 +52,20 @@ def main():
     setup_logging(arguments.debug)
     try:
         search_query = get_and_validate_query(arguments.query, arguments.queryfile)
-    except ValueError as e:
+    except json.JSONDecodeError as e:
         sys.exit('Invalid json: {}'.format(e))
     except RuntimeError as e:
         sys.exit('No query given. Use -q or -Q option')
     host = arguments.host
     storage_directory = prepare_storage_dir(arguments.destination)
-    if arguments.firmware:
-        search_result_json = make_search_request_firmware(host, search_query)
-    else:
-        search_result_json = make_search_request_file(host, search_query)
+    try:
+        if arguments.firmware:
+            search_result_json = make_search_request_firmware(host, search_query)
+        else:
+            search_result_json = make_search_request_file(host, search_query)
+    except (requests.RequestException, requests.HTTPError, requests.ConnectionError, json.JSONDecodeError, RuntimeError) as e:
+        sys.exit('Host not reachable: {}'.format(e))
+
     downloaded_files = 0
     logging.info('start download of {} files'.format(len(search_result_json['uids'])))
     for firmware_uid in search_result_json['uids']:
