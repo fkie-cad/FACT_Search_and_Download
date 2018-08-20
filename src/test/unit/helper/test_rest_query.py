@@ -31,9 +31,13 @@ def test_make_search_request_wrappers(monkeypatch):
     assert 'error_message' not in make_search_request_firmware('', '')
 
 
-def test_get_and_validate_query_error():
-    with pytest.raises(RuntimeError):
-        get_and_validate_query(None, None)
+@pytest.mark.parametrize('input_query_string, error_class', [
+    (None, RuntimeError),
+    ('{\'foo\': \'bar\'}', json.JSONDecodeError)]
+)
+def test_get_and_validate_query_error(input_query_string, error_class):
+    with pytest.raises(error_class):
+        get_and_validate_query(input_query_string, None)
 
 
 def test_get_and_validate_query_string():
@@ -42,13 +46,7 @@ def test_get_and_validate_query_string():
     assert query_string == result
 
 
-def test_get_and_validate_raises():
-    with pytest.raises(json.JSONDecodeError):
-        get_and_validate_query('{\'foo\': \'bar\'}', None)
-
-
-@pytest.mark.skip(reason='patch not working')
 def test_get_and_validate_file(monkeypatch):
     query_string = b'{"foo": "bar"}'
-    monkeypatch.setattr('common_helper_files.fail_safe_file_operations.get_binary_from_file', lambda file_path: query_string)
+    monkeypatch.setattr('helper.rest_query.get_binary_from_file', lambda file_path: query_string)
     assert get_and_validate_query(None, '/any/path') == query_string.decode('utf-8', 'ignore')
