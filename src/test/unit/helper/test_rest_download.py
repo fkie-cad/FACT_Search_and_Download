@@ -4,6 +4,7 @@ import os.path
 
 import requests
 from helper.rest_download import _make_download_request, download_file
+from helper.storage import get_storage_path
 
 
 class RequestsGetResponseMock:
@@ -28,7 +29,7 @@ def mock_type_error(s):
     raise TypeError('ds', 'f', 1)
 
 
-def mock_syntax_error(self):
+def mock_syntax_error(s):
     raise SyntaxError('ds', 'f', 1)
 
 
@@ -61,8 +62,7 @@ def test_download_file_valid(monkeypatch):
     binary = bytes(download_json['binary'], encoding='utf-8')
     monkeypatch.setattr('base64.b64decode', lambda binary_base64: binary)
     storage_directory = "./"
-    storage_path = storage_directory + download_json['file_name']
-
+    storage_path = get_storage_path(download_json['file_name'], storage_directory)
     assert download_file('', '', storage_directory) == 0
 
     assert_file_is_correctly_written(storage_path, download_json)
