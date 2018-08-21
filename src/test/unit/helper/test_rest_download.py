@@ -1,10 +1,13 @@
 import json
 import os
 import os.path
+from pathlib import Path
 
 import requests
 from helper.rest_download import _make_download_request, download_file
 from helper.storage import get_storage_path
+
+STORAGE_DIR = Path(Path(__file__).parent.parent.parent, 'data')
 
 
 class RequestsGetResponseMock:
@@ -61,10 +64,8 @@ def test_download_file_valid(monkeypatch):
     monkeypatch.setattr('requests.get', lambda url: VALID_JSON_RESPONSE)
     binary = bytes(download_json['binary'], encoding='utf-8')
     monkeypatch.setattr('base64.b64decode', lambda binary_base64: binary)
-    storage_directory = "./"
-    storage_path = get_storage_path(download_json['file_name'], storage_directory)
-    assert download_file('', '', storage_directory) == 0
-
+    storage_path = get_storage_path(download_json['file_name'], STORAGE_DIR)
+    assert download_file('', '', STORAGE_DIR) == 0
     assert_file_is_correctly_written(storage_path, download_json)
     remove_file(storage_path)
 
