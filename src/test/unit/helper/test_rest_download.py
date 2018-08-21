@@ -1,13 +1,10 @@
 import json
-import os
-import os.path
+import tempfile
 from pathlib import Path
 
 import requests
 from helper.rest_download import _make_download_request, download_file
 from helper.storage import get_storage_path
-
-STORAGE_DIR = Path(Path(__file__).parent.parent.parent, 'data')
 
 
 class RequestsGetResponseMock:
@@ -21,7 +18,7 @@ class RequestsGetResponseMock:
 
 
 JSON_ERROR_RESPONSE = RequestsGetResponseMock('not valid')
-VALID_JSON_RESPONSE = RequestsGetResponseMock({"binary": "foo", "file_name": "bar"})
+VALID_JSON_RESPONSE = RequestsGetResponseMock({'binary': 'foo', 'file_name': 'bar'})
 
 
 def mock_request_exception(url):
@@ -64,22 +61,21 @@ def test_download_file_valid(monkeypatch):
     monkeypatch.setattr('requests.get', lambda url: VALID_JSON_RESPONSE)
     binary = bytes(download_json['binary'], encoding='utf-8')
     monkeypatch.setattr('base64.b64decode', lambda binary_base64: binary)
-    storage_path = get_storage_path(download_json['file_name'], STORAGE_DIR)
-    assert download_file('', '', STORAGE_DIR) == 0
+
+    temp_dir = tempfile.TemporaryDirectory()
+    storage_path = get_storage_path(download_json['file_name'], temp_dir.name)
+
+    assert download_file('', '', temp_dir.name) == 0
     assert_file_is_correctly_written(storage_path, download_json)
-    remove_file(storage_path)
+
+    temp_dir.cleanup()
 
 
 def assert_file_is_correctly_written(storage_path, download_json):
-    assert os.path.isfile(storage_path)
+    is_file = Path(storage_path).is_file()
+    assert is_file
 
-    if os.path.isfile(storage_path):
-        downloaded_file = open(storage_path, "r")
-        c = downloaded_file.read()
+    if is_file:
+        with open(str(storage_path), 'r') as downloaded_file:
+            c = downloaded_file.read()
         assert c == download_json['binary']
-        downloaded_file.close()
-
-
-def remove_file(storage_path):
-    if os.path.isfile(storage_path):
-        os.remove(storage_path)
