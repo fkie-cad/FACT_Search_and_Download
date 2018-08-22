@@ -74,10 +74,10 @@ def test_download_file_valid(monkeypatch):
 
 
 def assert_file_is_correctly_written(storage_path, download_json):
-    is_file = Path(storage_path).is_file()
-    assert is_file
+    file_exists = Path(storage_path).is_file()
+    assert file_exists
 
-    if is_file:
+    if file_exists:
         with open(str(storage_path), 'r') as downloaded_file:
             c = downloaded_file.read()
         assert c == download_json['binary']
