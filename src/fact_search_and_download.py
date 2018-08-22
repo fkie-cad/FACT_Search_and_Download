@@ -47,6 +47,13 @@ def check_arguments():
     return arguments
 
 
+def _make_search_request(host, query, firmware_flag):
+    if firmware_flag:
+        return make_search_request_firmware(host, query)
+    else:
+        return make_search_request_file(host, query)
+
+
 def main():
     arguments = check_arguments()
     setup_logging(arguments.debug)
@@ -59,19 +66,20 @@ def main():
     host = arguments.host
     storage_directory = prepare_storage_dir(arguments.destination)
     try:
-        if arguments.firmware:
-            search_result_json = make_search_request_firmware(host, search_query)
-        else:
-            search_result_json = make_search_request_file(host, search_query)
-    except (requests.RequestException, requests.HTTPError, requests.ConnectionError, json.JSONDecodeError, RuntimeError) as e:
-        sys.exit('Host not reachable: {}'.format(e))
+        search_result_json = _make_search_request(host, search_query, arguments.firmware)
+    except (requests.RequestException, requests.HTTPError, requests.ConnectionError) as e:
+        sys.exit('FACT not reachable: {}'.format(e))
+    except json.JSONDecodeError as e:
+        sys.exit('Server\'s response is invalid: {}'.format(e))
+    except RuntimeError as e:
+        sys.exit('Query not accepted: {}'.format(e))
 
     downloaded_files = 0
     logging.info('start download of {} files'.format(len(search_result_json['uids'])))
     for firmware_uid in search_result_json['uids']:
         if download_file(host, firmware_uid, storage_directory) is not None:
             downloaded_files = downloaded_files + 1
-        if downloaded_files % 10 == 0:
+        if downloaded_files % 10 == 0 or downloaded_files == len(search_result_json['uids']):
             logging.info('{} / {}'.format(downloaded_files, len(search_result_json['uids'])))
     logging.info('Found {} files(s), downloaded {} files(s)'.format(len(search_result_json['uids']), downloaded_files))
     return 0
