@@ -53,6 +53,7 @@ def test_download_file_error(monkeypatch):
     monkeypatch.setattr('base64.b64decode', mock_syntax_error)
     assert download_file('', '', '') is None
 
+    monkeypatch.setattr('requests.get', lambda url: VALID_JSON_RESPONSE)
     monkeypatch.setattr('base64.b64decode', mock_type_error)
     assert download_file('', '', '') is None
 
