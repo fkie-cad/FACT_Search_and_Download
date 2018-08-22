@@ -28,6 +28,6 @@ def download_file(host, file_uid, storage_directory):
         logging.error('Error: %s' % e)
         return None
     storage_path = get_storage_path(download_json['file_name'], storage_directory)
-    with open(storage_path, 'wb') as downloaded_file:
+    with open(str(storage_path), 'wb') as downloaded_file:
         downloaded_file.write(binary)
     return 0
